@@ -32,7 +32,7 @@ const puppeteer = require("puppeteer");
     "https://edu-p18-t04.odoo.com/web/login?login=admin.edu-p18-t04@odoosim.ch"
   );
 
-  await page.screenshot({ path: "screenshots/login.png" });
+  //await page.screenshot({ path: "screenshots/login.png" });
   await page.type('[name="password"]', process.env.password);
   await page.click('[type="submit"]');
   await page.waitForSelector(".o_home_menu");
@@ -40,11 +40,42 @@ const puppeteer = require("puppeteer");
   await page.addScriptTag({
     content: fs.readFileSync("./annotationHelper.js").toString()
   });
-
+/*
   await capture( "home.png", () => {
     addBorderToSelector('[data-menu-xmlid="purchase.menu_purchase_root"]', true);
   });
+*/
+  await capture( "menu_sales.png", () => {
+    addBorderToSelector('[data-menu-xmlid="sale.sale_menu_root"]', true);
+  });
 
+  await page.click('[data-menu-xmlid="sale.sale_menu_root"]');
+  await page.waitForSelector('[data-menu-xmlid="sale.menu_sale_config"]');
+  // expand menu
+  await page.click('[data-menu-xmlid="sale.menu_sale_config"]');
+  await capture( 'sales_configuration.png', () => {
+    addBorderToSelector('[data-menu-xmlid="sale.menu_sale_config"]');
+    addBorderToSelector('[data-menu-xmlid="sale.menu_sale_general_settings"]', true);
+  });
+
+  await page.click('[data-menu-xmlid="sale.menu_sale_general_settings"]');
+
+  await page.waitForSelector('[name="group_uom"]');
+  await page.click('[name="group_uom"]');
+  await capture("activate_uom_configuration.png", () => {
+    addArrowToSelector('[name="group_uom"]', "1");
+    addHighlightToSelector('[name="group_uom"]');
+    addArrowToSelector('[name="execute"]', "2");
+  });
+
+  await capture("menu_config_uom.png", () => {
+    const dom = '[attrs="{\'invisible\': [(\'group_uom\',\'=\',False)]}"]';
+    addHighlightToSelector(dom);
+    addArrowToSelector(dom);
+  });
+
+
+  /* test config purchase flow
   await page.click('[data-menu-xmlid="purchase.menu_purchase_root"]');
   await page.waitForSelector('[data-menu-xmlid="purchase.menu_procurement_management"]');
   // expand menu
@@ -67,7 +98,6 @@ const puppeteer = require("puppeteer");
   // uncheck
   await page.click('[name="sale_ok"]');
   await capture("purchase_new_article_form.png", () => {
-    addOverlay();
     addArrowToSelector('[name="name"]', "1");
     addHighlightToSelector('[name="name"]');
 
@@ -80,6 +110,7 @@ const puppeteer = require("puppeteer");
     addArrowToSelector('[name="taxes_id"]', "x");
     addHighlightToSelector('[name="taxes_id"]');
   });
+  */
 
   await browser.close();
 })();
