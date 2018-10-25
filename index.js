@@ -45,6 +45,11 @@ const puppeteer = require("puppeteer");
     addBorderToSelector('[data-menu-xmlid="purchase.menu_purchase_root"]', true);
   });
 */
+
+  await capture( "menu_comptabilite.png", () => {
+    addBorderToSelector('[data-menu-xmlid="account.menu_finance"]', true);
+  });
+/*
   await capture( "menu_sales.png", () => {
     addBorderToSelector('[data-menu-xmlid="sale.sale_menu_root"]', true);
   });
@@ -73,7 +78,7 @@ const puppeteer = require("puppeteer");
     addHighlightToSelector(dom);
     addArrowToSelector(dom);
   });
-
+*/
 
   /* test config purchase flow
   await page.click('[data-menu-xmlid="purchase.menu_purchase_root"]');
