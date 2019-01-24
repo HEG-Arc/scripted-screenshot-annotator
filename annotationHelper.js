@@ -84,3 +84,11 @@ function addBorderToSelector(selector, withArrow) {
     }
   }
 }
+
+function addBlur(selector) {
+  const e = document.querySelector(selector);
+  if (e) {
+    e.style.filter = "blur(4px)";
+  }
+}
+
