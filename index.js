@@ -1,5 +1,6 @@
 const fs = require("fs");
 const puppeteer = require("puppeteer");
+const tour = require("./tour").tour;
 
 (async () => {
   const browser = await puppeteer.launch({
@@ -30,17 +31,61 @@ const puppeteer = require("puppeteer");
   }
 
   await page.goto(
-    "https://edu-p18-c01a.odoo.com/web/login?login=admin.edu-p18-c01a@odoosim.ch"
+    "http://localhost:8069/web/login?login=admin"
   );
 
   //await page.screenshot({ path: "screenshots/login.png" });
-  await page.type('[name="password"]', process.env.password);
+  await page.type('[name="password"]', '');
   await page.click('[type="submit"]');
   await page.waitForSelector(".o_home_menu");
   await page.waitFor(1000);
   await page.addScriptTag({
     content: fs.readFileSync("./annotationHelper.js").toString()
   });
+
+  async function captureTour(i) {
+    console.log(i);
+    await page.hover('.o_tooltip')
+    await page.waitFor(1000);
+    const rect = await page.evaluate((selector) => {
+      const el = document.querySelector('.o_tooltip');
+      if (el) {
+        const {x, y, width, height} = el.getBoundingClientRect();
+        return {x, y, width, height};
+      }
+      return {x: 0, y: 0, width: window.innerWidth, height: window.innerHeight}
+    }, tour[i].trigger);
+    await capture( `${i}.png`, () => {
+    }, {
+      clip: {
+        x: rect.x - 80,
+        y: rect.y - 80,
+        width: rect.width + 160,
+        height: rect.height + 160
+      }
+    });
+    await page.click(tour[i].trigger);
+    await page.waitFor(2000);
+    try{
+      await page.type('[placeholder="Name"]', 'Test');
+    } catch(e) {
+
+    }
+    try{
+      await page.type('[placeholder="Product Name"]', 'Test');
+    } catch(e) {
+
+    }
+    try{
+      await page.type('.o_input.ui-autocomplete-input', 'Test');
+      await page.waitFor(500);
+      await page.click('.ui-autocomplete li.ui-menu-item a');
+    } catch(e) {
+    }
+  }
+  for(let i=0; i<tour.length; i++) {
+    await captureTour(i);
+  }
 /*
   await capture( "home.png", () => {
     addBorderToSelector('[data-menu-xmlid="purchase.menu_purchase_root"]', true);
