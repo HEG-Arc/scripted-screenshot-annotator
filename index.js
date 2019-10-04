@@ -11,7 +11,6 @@ const tour = require("./tour").tour;
     }
   });
 
-
   const page = await browser.newPage();
 
   function destroyOverlay() {
@@ -25,17 +24,18 @@ const tour = require("./tour").tour;
       addOverlay();
     });
     await page.evaluate(func);
-    screenshotOptions = Object.assign({ path: `screenshots/${path}` }, options);
+    const screenshotOptions = Object.assign(
+      { path: `screenshots/${path}` },
+      options
+    );
     await page.screenshot(screenshotOptions);
     await destroyOverlay();
   }
 
-  await page.goto(
-    "http://localhost:8069/web/login?login=admin"
-  );
+  await page.goto("http://localhost:8069/web/login?login=admin");
 
   //await page.screenshot({ path: "screenshots/login.png" });
-  await page.type('[name="password"]', '');
+  await page.type('[name="password"]', "");
   await page.click('[type="submit"]');
   await page.waitForSelector(".o_home_menu");
   await page.waitFor(1000);
@@ -45,54 +45,86 @@ const tour = require("./tour").tour;
 
   async function captureTour(i) {
     console.log(i);
-    await page.hover('.o_tooltip')
-    await page.waitFor(1000);
-    const rect = await page.evaluate((selector) => {
-      const el = document.querySelector('.o_tooltip');
-      if (el) {
-        const {x, y, width, height} = el.getBoundingClientRect();
-        return {x, y, width, height};
-      }
-      return {x: 0, y: 0, width: window.innerWidth, height: window.innerHeight}
+    const name = await page.evaluate(selector => {
+      const names = [];
+      [".o_menu_brand", ".breadcrumb", selector].forEach(s => {
+        const e = document.querySelector(s);
+        if (e && e.innerText && e.innerText.trim()) {
+          names.push(e.innerText.trim().replace("\n", " / "));
+        }
+      });
+      return names.join(" / ");
     }, tour[i].trigger);
-    await capture( `${i}.png`, () => {
-    }, {
-      clip: {
-        x: rect.x - 80,
-        y: rect.y - 80,
-        width: rect.width + 160,
-        height: rect.height + 160
-      }
-    });
+    tour[i].name = name;
+    console.log(name);
+    try {
+      await page.hover(".o_tooltip");
+      await page.waitFor(1000);
+      const rect = await page.evaluate(() => {
+        const el = document.querySelector(".o_tooltip");
+        if (el) {
+          const { x, y, width, height } = el.getBoundingClientRect();
+          return { x, y, width, height };
+        }
+        return {
+          x: 0,
+          y: 0,
+          width: window.innerWidth,
+          height: window.innerHeight
+        };
+      });
+      await capture(`${i}.png`, () => {}, {
+        clip: {
+          x: rect.x - 120,
+          y: rect.y - 120,
+          width: rect.width + 240,
+          height: rect.height + 240
+        }
+      });
+    } catch (e) {
+      console.log("tooltip not found");
+    }
     await page.click(tour[i].trigger);
     await page.waitFor(2000);
-    try{
-      await page.type('[placeholder="Name"]', 'Test');
-    } catch(e) {
-
-    }
-    try{
-      await page.type('[placeholder="Product Name"]', 'Test');
-    } catch(e) {
-
-    }
-    try{
-      await page.type('.o_input.ui-autocomplete-input', 'Test');
-      await page.waitFor(500);
-      await page.click('.ui-autocomplete li.ui-menu-item a');
-    } catch(e) {
+    await page.evaluate(() => {
+      ['[placeholder="Name"]', '[placeholder="Product Name"]'].forEach(
+        selector => {
+          const e = document.querySelector(selector);
+          if (e) {
+            e.value = "Test";
+            const event = document.createEvent("HTMLEvents");
+            event.initEvent("change", true, false);
+            e.dispatchEvent(event);
+          }
+        }
+      );
+    });
+    const needToAdd = await page.evaluate(() => {
+      const e = document.querySelector(".o_input.ui-autocomplete-input");
+      if (e) {
+        return e.value === "";
+      }
+      return false;
+    });
+    if (needToAdd) {
+      try {
+        await page.type(".o_input.ui-autocomplete-input", "Test");
+        await page.waitFor(500);
+        await page.click(".ui-autocomplete li.ui-menu-item a");
+      } catch (e) {}
     }
   }
-  for(let i=0; i<tour.length; i++) {
+  for (let i = 0; i < tour.length; i++) {
     await captureTour(i);
   }
-/*
+  console.log(JSON.stringify(tour));
+  /*
   await capture( "home.png", () => {
     addBorderToSelector('[data-menu-xmlid="purchase.menu_purchase_root"]', true);
   });
 */
 
-/*
+  /*
 // config installed apps
 await page.click('[data-menu-xmlid="base.menu_management"]');
 await page.waitFor(1000);
@@ -102,7 +134,7 @@ await capture( "install_apps_final.png", () => {
   addBorderToSelector('.o_search_options .o_filters_menu div:nth-of-type(5) a', true)
 });
 */
-/*
+  /*
   await capture( "menu_sales.png", () => {
     addBorderToSelector('[data-menu-xmlid="sale.sale_menu_root"]', true);
   });
@@ -132,7 +164,7 @@ await capture( "install_apps_final.png", () => {
     addArrowToSelector(dom);
   });
 */
-/*
+  /*
   // test config purchase flow
   await page.click('[data-menu-xmlid="purchase.menu_purchase_root"]');
   await page.waitForSelector('[data-menu-xmlid="purchase.menu_procurement_management"]');
